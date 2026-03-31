@@ -53,3 +53,11 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# dionysios build files
+/disk/* 
+!/disk/.gitkeep
+*.tar
+*.bin
+*.log
+*.pcap

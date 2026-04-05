@@ -52,10 +52,15 @@ void kernel_main(void)
     printf("\n\nHello %s\n", "World!");
     printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
 
+	PANIC("booted!");
+	printf("This text must not be reached!\n");
+
+	/* 
     for (;;)
     {
         __asm__ __volatile__("wfi");
     }
+    */
 }
 
 __attribute__((section(".text.boot")))      // sets the function at the .text.boot section, which is where OpenSBI jumps to (0x80200000)

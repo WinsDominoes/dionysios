@@ -8,19 +8,6 @@ typedef uint32_t size_t;
 
 extern char __bss[], __bss_end[], __stack_top[];    // we want to get the "address" from the symbols!
 
-// memset: writes c into buf with the size n)
-// n decreases because n decrease -> stack grows
-// as the stack grows, we write c into that buffer
-// which is referenced by *p pointer.
-void *memset(void *buf, char c, size_t n)
-{
-    uint8_t *p = (uint8_t *) buf;
-    while (n--)
-    {
-        *p++ = c;
-    } 
-    return buf;
-}
 
 /*  
     sbi_call: Function that calls the Supervisor Binary Interface to use its functions

@@ -64,7 +64,7 @@ void kernel_main(void)
 }
 
 __attribute__((naked))                      // tells compiler -> no generating unnecessary code before and after function
-__attribute__((aligned(4)))
+__attribute__((aligned(4)))                 // aligns function starting addr to a 4-byte boundary
 // Entry point of the exception handler
 // 
 void kernel_entry(void)
@@ -109,7 +109,7 @@ void kernel_entry(void)
         "sw s10, 4 * 28(sp)\n"
         "sw s11, 4 * 29(sp)\n"
         
-        "csrr a0, sscratch\n"                
+        "csrr a0, sscratch\n"                // sscratch (tmp storage) has the val of sp (earlier) -> store into a0
         "sw a0, 4 * 30(sp)\n"               
 
         "mv a0, sp\n"                        // stack pointer stored in a0: sp points tp register values stored as the trap_frame structure
@@ -147,7 +147,19 @@ void kernel_entry(void)
         "lw s11, 4 * 29(sp)\n"
         "lw sp,  4 * 30(sp)\n"
         "sret\n"
-    )    
+    );
+}
+
+// Function for handling the exception
+void handle_trap(struct trap_frame *f)
+{
+    // Reads why the exception has occured
+    uint32_t scause = READ_CSR(scause);         // Type of exception 
+    uint32_t stval = READ_CSR(stval);           // Additional information about the exception (e.g. mem addr that caused the exception)
+    uint32_t user_pc = READ_CSR(sepc);          // Program counter (at the point) where the exception occured.
+
+    // Triggers a kernel panic for debugging processes
+    PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
 
 __attribute__((section(".text.boot")))      // sets the function at the .text.boot section, which is where OpenSBI jumps to (0x80200000)

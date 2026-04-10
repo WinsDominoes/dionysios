@@ -45,28 +45,22 @@ void putchar(char ch)
     sbi_call(ch, 0, 0, 0, 0, 0, 0, 1); // console putchar
 }
 
-void kernel_main(void)
+// Function for handling the exception
+void handle_trap(struct trap_frame *f)
 {
-    // memset(__bss, 0, (size_t) __bss_end - (size_t) __bss);  // initializes / sets the bss section to zero
+    // Reads why the exception has occured
+    uint32_t scause = READ_CSR(scause);         // Type of exception 
+    uint32_t stval = READ_CSR(stval);           // Additional information about the exception (e.g. mem addr that caused the exception)
+    uint32_t user_pc = READ_CSR(sepc);          // Program counter (at the point) where the exception occured.
 
-    printf("\n\nHello %s\n", "World!");
-    printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
-
-	PANIC("booted!");
-	printf("This text must not be reached!\n");
-
-	/* 
-    for (;;)
-    {
-        __asm__ __volatile__("wfi");
-    }
-    */
+    // Triggers a kernel panic for debugging processes
+    PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
 
 __attribute__((naked))                      // tells compiler -> no generating unnecessary code before and after function
 __attribute__((aligned(4)))                 // aligns function starting addr to a 4-byte boundary
 // Entry point of the exception handler
-// 
+// This whole thing is basically saving the state of the registers and doing the exception handling
 void kernel_entry(void)
 {
     __asm__ __volatile__
@@ -150,16 +144,36 @@ void kernel_entry(void)
     );
 }
 
-// Function for handling the exception
-void handle_trap(struct trap_frame *f)
+void kernel_main(void)
 {
-    // Reads why the exception has occured
-    uint32_t scause = READ_CSR(scause);         // Type of exception 
-    uint32_t stval = READ_CSR(stval);           // Additional information about the exception (e.g. mem addr that caused the exception)
-    uint32_t user_pc = READ_CSR(sepc);          // Program counter (at the point) where the exception occured.
+    memset(__bss, 0, (size_t) __bss_end - (size_t) __bss);  // initializes / sets the bss section to zero
+    
+    printf("\n\nHello %s\n", "World!");
+    printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
 
-    // Triggers a kernel panic for debugging processes
-    PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
+    WRITE_CSR(stvec, (uint32_t) kernel_entry);
+    // unimp is a pseudo instruction - the assembler turns it into
+    // csrrw x0, cycle, x0 
+    // reads and writes the cycle register into x0 
+    // cycle is a read-only register, therefore, you can write shit into it
+    // CPU sees it, it goes "INVALID!" and triggers an illegal instruction exception
+    __asm__ __volatile__("unimp");
+
+    
+    /* 
+    printf("\n\nHello %s\n", "World!");
+    printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
+
+	PANIC("booted!");
+	printf("This text must not be reached!\n");
+	*/
+
+	/* 
+    for (;;)
+    {
+        __asm__ __volatile__("wfi");
+    }
+    */
 }
 
 __attribute__((section(".text.boot")))      // sets the function at the .text.boot section, which is where OpenSBI jumps to (0x80200000)

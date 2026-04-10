@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 
 /* Macro for Kernel panics
 
@@ -86,11 +87,10 @@ struct trap_frame
 	})
 
 // For WRITING Control/Status Registers (CSRs)
-#define WRITE_CSR(reg, value)
-	do 																			\
-	{																			\
+#define WRITE_CSR(reg, value)                                                   \
+	do {																		\
 		uint32_t __tmp = (value);												\
-		__asm __volatile__("csrw " # reg ", %0" ::"r"(__tmp));					\
+		__asm __volatile__("csrw " #reg ", %0" ::"r"(__tmp));					\
 	} while (0)
 
 #define PANIC(fmt, ...)															\

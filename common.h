@@ -13,6 +13,7 @@ typedef uint32_t vaddr_t;					// Virtual memory addresses (if in stdlib C, uintp
 #define true 1
 #define false 0
 #define NULL ((void *) 0) // void * -> a pointer to something "not tightly specified"
+#define PAGE_SIZE 4096
 
 /* macros for memory alignment */
 // __builtin__ -> clang-specific functions

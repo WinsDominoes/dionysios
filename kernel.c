@@ -72,7 +72,6 @@ void putchar(char ch)
     sbi_call(ch, 0, 0, 0, 0, 0, 0, 1); // console putchar
 }
 
-<<<<<<< Updated upstream
 // Function for handling the exception
 void handle_trap(struct trap_frame *f)
 {
@@ -172,30 +171,6 @@ void kernel_entry(void)
     );
 }
 
-void kernel_main(void)
-{
-    memset(__bss, 0, (size_t) __bss_end - (size_t) __bss);  // initializes / sets the bss section to zero
-    
-    printf("\n\nHello %s\n", "World!");
-    printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
-
-    WRITE_CSR(stvec, (uint32_t) kernel_entry);
-    // unimp is a pseudo instruction - the assembler turns it into
-    // csrrw x0, cycle, x0 
-    // reads and writes the cycle register into x0 
-    // cycle is a read-only register, therefore, you can write shit into it
-    // CPU sees it, it goes "INVALID!" and triggers an illegal instruction exception
-    __asm__ __volatile__("unimp");
-
-    
-    /* 
-    printf("\n\nHello %s\n", "World!");
-    printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
-
-	PANIC("booted!");
-	printf("This text must not be reached!\n");
-	*/
-=======
 // Main Kernel function
 void kernel_main(void)
 {
@@ -212,10 +187,22 @@ void kernel_main(void)
 	PANIC("booted!");
 
 
+    /* UNUSED 
+    
+    WRITE_CSR(stvec, (uint32_t) kernel_entry);
+    // unimp is a pseudo instruction - the assembler turns it into
+    // csrrw x0, cycle, x0 
+    // reads and writes the cycle register into x0 
+    // cycle is a read-only register, therefore, you can write shit into it
+    // CPU sees it, it goes "INVALID!" and triggers an illegal instruction exception
+    __asm__ __volatile__("unimp");
+    
+    
+    */
+
 	// UNUSED
 
 	// printf("This text must not be reached!\n");
->>>>>>> Stashed changes
 
 	/* 
     for (;;)

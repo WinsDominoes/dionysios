@@ -84,6 +84,8 @@ void handle_trap(struct trap_frame *f)
     PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
 
+// CONTEXT SWITCHING
+
 __attribute__((naked))                      // tells compiler -> no generating unnecessary code before and after function
 __attribute__((aligned(4)))                 // aligns function starting addr to a 4-byte boundary
 // Entry point of the exception handler

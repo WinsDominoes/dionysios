@@ -106,3 +106,19 @@ struct sbiret
     long error;
     long value;
 };
+
+/* PROCESS MACROS */
+#define PROCS_MAX 8                     // Max num of process
+
+// Process state
+#define PROC_UNUSED 0                   // Unused process control structure (PCB)
+#define PROC_RUNNABLE 1                 // process that can be ran
+
+struct process
+{
+    int pid;                            // Process ID
+    int state;                          // What is the state of this process
+    vaddr_t sp;                         // Stack pointer
+    uint8_t stack[8192];                // Kernel stack -> saves CPU registers, return addr, & local var.
+                                        // For process to save CPU registers and switching stack poitner
+};

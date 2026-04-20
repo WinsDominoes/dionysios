@@ -197,6 +197,13 @@ void yield(void)
     if (next == current_proc)
         return;
 
+    __asm__ __volatile__
+    (
+        "csrw sscratch, %[sscratch]\n"
+        :
+        : [sscratch] "r" ((uint32_t) &next->stack[sizeof(next->stack)])
+    );
+
     // context switching
     struct process *prev = current_proc;
     current_proc = next; 
@@ -212,7 +219,11 @@ void kernel_entry(void)
 {
     __asm__ __volatile__
     (
-        "csrw sscratch, sp\n"               // register -> temp storage saving the STACK POINTER at the time of exception occurance
+        "csrrw sp, sscratch, sp\n"          // register -> temp storage saving the STACK POINTER at the time of exception occurance
+                                            // retrieve the kernel stack of the running process from sscratch
+                                            // sp points to the kernel stack of the currently running proc
+                                            // sscratch holds the original value of sp (user stack) at the time of except.
+                                            
         "addi sp, sp, -4 * 31\n"            // offsetting the stack pointer...?
         "sw ra, 4 * 0(sp)\n"                  // sw = store word -> return address register
         "sw gp, 4 * 1(sp)\n"
@@ -249,9 +260,14 @@ void kernel_entry(void)
         "sw s9,  4 * 27(sp)\n"
         "sw s10, 4 * 28(sp)\n"
         "sw s11, 4 * 29(sp)\n"
-        
+
+        // Restore the original value of sp from sscratch and save it to kernel stack
         "csrr a0, sscratch\n"                // sscratch (tmp storage) has the val of sp (earlier) -> store into a0
-        "sw a0, 4 * 30(sp)\n"               
+        "sw a0, 4 * 30(sp)\n"                
+
+        // Reset the kernel stack
+        "addi a0, sp, 4 * 31\n"
+        "csrw sscratch, a0\n"
 
         "mv a0, sp\n"                        // stack pointer stored in a0: sp points tp register values stored as the trap_frame structure
         "call handle_trap\n"                // call the handle_trap function
@@ -289,6 +305,13 @@ void kernel_entry(void)
         "lw sp,  4 * 30(sp)\n"
         "sret\n"
     );
+
+    /* 
+    The key point here is that each process has its own independent kernel stack. 
+    By switching the contents of sscratch during context switching, 
+    we can resume the execution of the process from the point where it was interrupted, 
+    as if nothing had happened.
+    */
 }
 
 // Test context switching

@@ -84,6 +84,45 @@ void handle_trap(struct trap_frame *f)
     PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
 
+
+// MAPPING PAGES
+/*
+	table1 -> first-level page table
+	vaddr -> virtual address
+	paddr -> physical addressd
+	flags -> page table entry flags
+	
+	TODO: Read more on RISC-V Paging mechanism (Sv32)
+*/
+void map_page(uint32_t *table1, uint32_t vaddr, uint32_t paddr, uint32_t flags)
+{
+	if (!is_aligned(vaddr, PAGE_SIZE))
+	{
+		PANIC("Unaligned vaddr %x", vaddr);
+	}
+
+	if (!is_aligned(paddr, PAGE_SIZE))
+	{
+		PANIC("Unaligned paddr %x", paddr);
+	}
+
+	uint32_t vpn1 = (vaddr >> 22) & 0x3ff; 
+	if ((table1[vpn1] & PAGE_V) == 0)		// This means... there is no 1st level page table yet.
+	{
+		// Create 1st level apge
+		uint32_t pt_paddr = alloc_pages(1);
+		table1[vpn1] = ((pt_paddr / PAGE_SIZE) << 10) | PAGE_V);
+	}
+
+	// Set the 2nd level page entry to map the physical page
+	uint32_t vpn0 = (vaddr >> 12) & 0x3ff;
+	uint32_t *table0 = (uint32_t *) ((table1[vpn1] >> 10) * PAGE_SIZE);
+	table0[vpn0] = ((paddr / PAGE_SIZE) << 10 | flags | PAGE_V);
+
+	// > It divides paddr by PAGE_SIZE because the entry should contain the physical page number, not the physical address itself.
+}
+
+
 // Process creation
 struct process procs[PROCS_MAX];             // All process control structures
 

@@ -67,6 +67,24 @@ struct trap_frame
     uint32_t sp;
 } __attribute__((packed));
 
+/*  PAGE TABLE - constructed in Sv32 (RISC-V's paging mechanism) - two-level page table
+
+	32-bit virtual address -> first level page index (VPN[1])
+						   -> second level index	 (VPN[0])
+						   -> page offset
+
+	Check principle of locality - smaller page table sizes 
+
+	CPU access memory -> calculate VPN[1] and VPN[0] to get corresponding page table entry then adds offset to get physical addr
+*/
+#define SATP_SV32	(1u << 31)	// single bit in the satp register (enable paging in Sv32 mode)
+// these macros are flags to be set in page table entries
+#define PAGE_V		(1 << 0)	// "Valid bit (entry is enabled)"
+#define PAGE_R		(1 << 1)	// Readable
+#define PAGE_W		(1 << 2)	// Writable
+#define PAGE_X		(1 << 3)	// Executable
+#define PAGE_U		(1 << 4)	// User (accessible in user mode)
+
 /* 
 	What are Control/Status Register
 	- Control and Status Register (CSR) are auxiliary registers in many CPUs 
@@ -119,6 +137,7 @@ struct process
     int pid;                            // Process ID
     int state;                          // What is the state of this process
     vaddr_t sp;                         // Stack pointer
+	uint32_t *page_table;				// Pointer to the first level page table.
     uint8_t stack[8192];                // Kernel stack -> saves CPU registers, return addr, & local var.
                                         // For process to save CPU registers and switching stack poitner
 };

@@ -3,7 +3,12 @@ set -xue
 
 # Vars
 QEMU=qemu-system-riscv32
-CC=clang
+
+# FOR LINUX USE THIS 
+#CC=clang
+# FOR MAC (my iMac use this)
+CC="/usr/local/opt/llvm/bin/clang"
+
 CFLAGS="-std=c11 -O2 -g3 -Wall -Wextra --target=riscv32-unknown-elf -fuse-ld=lld -fno-stack-protector -ffreestanding -nostdlib"
 # CFlags explained (left to right): Use C11, enable optimizations, 
 # max amount of debug info, major warnings, additional warnings, 

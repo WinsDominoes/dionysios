@@ -111,7 +111,7 @@ void map_page(uint32_t *table1, uint32_t vaddr, uint32_t paddr, uint32_t flags)
 	{
 		// Create 1st level apge
 		uint32_t pt_paddr = alloc_pages(1);
-		table1[vpn1] = ((pt_paddr / PAGE_SIZE) << 10) | PAGE_V);
+		table1[vpn1] = ((pt_paddr / PAGE_SIZE) << 10 | PAGE_V);
 	}
 
 	// Set the 2nd level page entry to map the physical page
@@ -125,6 +125,8 @@ void map_page(uint32_t *table1, uint32_t vaddr, uint32_t paddr, uint32_t flags)
 
 // Process creation
 struct process procs[PROCS_MAX];             // All process control structures
+extern char __kernel_base[];				 // Kernel pages span from __kernel_base -> __free_ram_end
+											 // Makes sure kernel alwaus can access static allocated & dynamic allocated
 
 struct process *create_process(uint32_t pc)
 {
@@ -161,10 +163,21 @@ struct process *create_process(uint32_t pc)
     *--sp = 0;                      // s0
     *--sp = (uint32_t) pc;          // ra
 
+	// add page table - mapping the kernel page
+	uint32_t *page_table = (uint32_t *) alloc_pages(1);
+	// from __kernel_base to __free_ram_end -> increment paddr by PAGE_SIZE
+	// essentially, mapping kernel page
+	for (paddr_t paddr = (paddr_t) __kernel_base; 
+		 paddr < (paddr_t) __free_ram_end; paddr += PAGE_SIZE)
+	{
+		map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+	}
+
     // Initialize fields.
     proc->pid = i + 1;
     proc->state = PROC_RUNNABLE;
     proc->sp = (uint32_t) sp;
+    proc->page_table = page_table;
     return proc;
 }
 
@@ -236,11 +249,19 @@ void yield(void)
     if (next == current_proc)
         return;
 
+	// sfence.vma -> ensure changes to page table are properly completed (mem fence)
+	// 			  -> clear cache of page table entries (TLB)
+
+	// switching page tables (because context switching -> switch process' page table)
     __asm__ __volatile__
     (
+    	"sfence.vma\n"
+    	"csrw satp, %[satp]\n"
+    	"sfence.vma\n"
         "csrw sscratch, %[sscratch]\n"
         :
-        : [sscratch] "r" ((uint32_t) &next->stack[sizeof(next->stack)])
+        : [satp] "r" (SATP_SV32 | ((uint32_t) next->page_table / PAGE_SIZE)),
+          [sscratch] "r" ((uint32_t) &next->stack[sizeof(next->stack)])
     );
 
     // context switching

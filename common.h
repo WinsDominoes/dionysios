@@ -18,7 +18,7 @@ typedef uint32_t vaddr_t;					// Virtual memory addresses (if in stdlib C, uintp
 /* macros for memory alignment */
 // __builtin__ -> clang-specific functions
 #define align_up(value, align)		__builtin_align_up(value, align)		// the thing that rounds up
-#define is_aligned(value, align)	__buildin_is_aligned(valie, align)		// check if rounded up
+#define is_aligned(value, align)	__builtin_is_aligned(value, align)		// check if rounded up
 #define offsetof(type, member)		__builtin_offsetof(type, member)		// returns offset of member within structure
 
 // __builtin__ prefix - provided by the compiler (clang)

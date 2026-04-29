@@ -9,7 +9,7 @@ typedef uint32_t size_t;
 extern char __bss[], __bss_end[], __stack_top[];    // we want to get the "address" from the symbols!
 extern char __free_ram[], __free_ram_end[];
 
-extern char __binary_shell_bin_start[], __binary_shell_bin_size[];  // symbols for embedded raw bin
+extern char _binary_shell_bin_start[], _binary_shell_bin_size[];  // symbols for embedded raw bin
 
 // Process creation
 struct process procs[PROCS_MAX];             // All process control structures
@@ -134,7 +134,7 @@ void user_entry(void)
     PANIC("not yet implemented");
 }
 
-struct process *create_process(uint32_t pc)
+struct process *create_process(const void *image, size_t image_size)
 {
     // Find unused proc in control structure.
     struct process *proc = NULL;
@@ -191,7 +191,7 @@ struct process *create_process(uint32_t pc)
         // fill and map the page
         memcpy((void *) page, image + off, copy_size);
         map_page(page_table, USER_BASE + off, page,
-                 PAGE_U | PAGE_R | PAGE W | PAGE_X);
+                 PAGE_U | PAGE_R | PAGE_W | PAGE_X);
 	}
 
     // Initialize fields.

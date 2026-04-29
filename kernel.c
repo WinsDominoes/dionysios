@@ -9,6 +9,13 @@ typedef uint32_t size_t;
 extern char __bss[], __bss_end[], __stack_top[];    // we want to get the "address" from the symbols!
 extern char __free_ram[], __free_ram_end[];
 
+extern char __binary_shell_bin_start[], __binary_shell_bin_size[];  // symbols for embedded raw bin
+
+// Process creation
+struct process procs[PROCS_MAX];             // All process control structures
+extern char __kernel_base[];				 // Kernel pages span from __kernel_base -> __free_ram_end
+											 // Makes sure kernel alwaus can access static allocated & dynamic allocated
+
 /* 
 	MEMORY ALLOCATOR: BUMP / LINEAR ALLOCATOR
 	- Used in cases where mem dealloc not neccessary
@@ -122,11 +129,10 @@ void map_page(uint32_t *table1, uint32_t vaddr, uint32_t paddr, uint32_t flags)
 	// > It divides paddr by PAGE_SIZE because the entry should contain the physical page number, not the physical address itself.
 }
 
-
-// Process creation
-struct process procs[PROCS_MAX];             // All process control structures
-extern char __kernel_base[];				 // Kernel pages span from __kernel_base -> __free_ram_end
-											 // Makes sure kernel alwaus can access static allocated & dynamic allocated
+void user_entry(void)
+{
+    PANIC("not yet implemented");
+}
 
 struct process *create_process(uint32_t pc)
 {
@@ -161,7 +167,7 @@ struct process *create_process(uint32_t pc)
     *--sp = 0;                      // s2
     *--sp = 0;                      // s1
     *--sp = 0;                      // s0
-    *--sp = (uint32_t) pc;          // ra
+    *--sp = (uint32_t) user_entry;  // ra
 
 	// add page table - mapping the kernel page
 	uint32_t *page_table = (uint32_t *) alloc_pages(1);
@@ -171,6 +177,16 @@ struct process *create_process(uint32_t pc)
 		 paddr < (paddr_t) __free_ram_end; paddr += PAGE_SIZE)
 	{
 		map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+	}
+
+	// map user pages
+	for (uint32_t off = 0; off < image_size; off += PAGE_SIZE)
+	{
+	    paddr_t page = alloc_pages(1);
+	    // TODO
+
+	    // IF data coped is smaller than page size
+	    size_t remaining = image_size - opf
 	}
 
     // Initialize fields.
@@ -480,3 +496,7 @@ void boot(void)
         : [stack_top] "r" (__stack_top)
     );
 }
+// Process creation
+struct process procs[PROCS_MAX];             // All process control structures
+extern char __kernel_base[];				 // Kernel pages span from __kernel_base -> __free_ram_end
+											 // Makes sure kernel alwaus can access static allocated & dynamic allocated

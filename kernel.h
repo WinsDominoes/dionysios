@@ -141,3 +141,6 @@ struct process
     uint8_t stack[8192];                // Kernel stack -> saves CPU registers, return addr, & local var.
                                         // For process to save CPU registers and switching stack poitner
 };
+
+#define USER_BASE 0x1000000             // same memory address that is specified in linker
+                                        // base virtaddr of application image -> user.ld (linker)
